@@ -20,16 +20,6 @@ BookGPT is a hybrid book recommendation system built on:
 - Streamlit
 - Ollama (LLM for intent parsing)
 
-## Project Structure
-Books-KG/
-├── src/
-│ ├── chatbot.py
-│ ├── recommender.py
-│ ├── store_embeddings.py
-│ └── configs/
-│ ├── config.py
-│ └── config.yaml
-├── tests/
-└── requirements.txt
+
 
 
