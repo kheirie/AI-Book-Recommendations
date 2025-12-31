@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv*
+venv/
+
+# Data
+data/
+*.parquet
+*.csv
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Private Folders
+private/
+notebooks/
+docker/
+logs/
+examples/
+

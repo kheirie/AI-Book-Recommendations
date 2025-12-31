@@ -1,0 +1,14 @@
+pandas
+rdflib
+spacy
+yake
+sentence-transformers
+pyvis
+flask
+pytest
+fuzzywuzzy
+python-Levenshtein
+wordcloud 
+missingno
+ollama
+neo4j

@@ -1,0 +1,17 @@
+# config.yaml 
+neo4j: 
+  uri: bolt://localhost:7687
+  user: null
+  password: null
+embeddings:
+  model: all-MiniLM-L6-v2
+  normalize: true
+  batch_size: 64
+OLLAMA:
+  url: http://localhost:11434/api/generate
+  model: llama3
+storage:
+  write_text_embedding: true
+  write_title_embedding: true
+recommender:
+  top_k: 5
