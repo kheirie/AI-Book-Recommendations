@@ -1,8 +1,6 @@
 # Python
 __pycache__/
-*.py[cod]
 *.egg-info/
-.venv/
 *.pyo
 *.pyd
 
@@ -28,4 +26,7 @@ notebooks/
 docker/
 logs/
 examples/
+
+# Environment files
+.env
 
