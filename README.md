@@ -131,13 +131,16 @@ recommend_books(
 ### Run Streamlit app 
 streamlit run src/chatbot.py
 
-> **Note** 
-> Ensure Neo4j is running
-> Make sure environment variables are loaded before running the application
-    > ```bash
-    > export $(cat .env | xargs)
-    > ```
+> **Note**  
+> Ensure Neo4j is running.  
+> Make sure environment variables are loaded before running the application:
+>
+> ```bash
+> export $(cat .env | xargs)
+> ```
+>
 > Do not commit your `.env` file to version control.
+
 
 ## Data
 
@@ -214,8 +217,6 @@ Additional data processing was performed in this project to make the dataset sui
 - Filtered out books with **very short or empty descriptions**
 
 This step improves embedding quality and semantic similarity performance.
-
----
 
 #### Genre Standardization
 
