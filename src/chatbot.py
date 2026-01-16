@@ -18,21 +18,23 @@ from recommender import recommend_books, LANGUAGE_MAP
 from configs.config import Config
 
 
-# ------------------------------------------------------------------
 # Configuration
-# ------------------------------------------------------------------
-
 cfg = Config()
 
 OLLAMA_URL = cfg.ollama_url
 OLLAMA_MODEL = cfg.ollama_model
 
 
-# ------------------------------------------------------------------
-# Ollama LLM helper
-# ------------------------------------------------------------------
-
 def call_ollama(prompt: str) -> str:
+    """
+    Sends a prompt to the Ollama API and returns the generated response.
+
+    Args:
+        prompt (str): Input text prompt for the model.
+
+    Returns:
+        str: Model-generated response text.
+    """
     payload = {
         "model": OLLAMA_MODEL,
         "prompt": prompt,
@@ -42,12 +44,17 @@ def call_ollama(prompt: str) -> str:
     response.raise_for_status()
     return response.json().get("response", "").strip()
 
-
-# ------------------------------------------------------------------
-# Intent parsing
-# ------------------------------------------------------------------
-
 def parse_intent(user_message: str) -> Literal["recommend", "chat"]:
+    """
+    Classifies the user's message intent as either a recommendation request or general chat.
+
+    Args:
+        user_message (str): Raw user input message.
+
+    Returns:
+        Literal["recommend", "chat"]: Detected intent category.
+    """
+    
     prompt = f"""
 You are a strict classification assistant.
 
@@ -69,11 +76,16 @@ Answer:
     return "recommend" if "recommend" in reply else "chat"
 
 
-# ------------------------------------------------------------------
-# Book title extraction
-# ------------------------------------------------------------------
-
 def extract_book_title(user_message: str) -> str:
+    """
+    Extracts a book title from the user's message.
+
+    Args:
+        user_message (str): Raw user input message.
+
+    Returns:
+        str: Extracted book title, or the original message if extraction fails.
+    """
     prompt = f"""
 Extract ONLY the book title from the sentence below.
 
@@ -94,9 +106,7 @@ Book title:
         return user_message.strip()
 
 
-# ------------------------------------------------------------------
 # Streamlit UI
-# ------------------------------------------------------------------
 
 st.set_page_config(
     page_title="BookGPT",

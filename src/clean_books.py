@@ -30,14 +30,15 @@ def clean_description(text):
 
 def extract_genres_ollama(genre, client, ollama_model = "mistral"):
     """
-    Standardize a single genre string using a Hugging Face Inference API model.
+    Standardizes a book genre into predefined categories using an Ollama model.
 
     Args:
-        genre: The genre string to standardize.
-        client: Hugging Face `InferenceClient` instance.
+        genre (str): Raw genre string.
+        client: Ollama-compatible chat client.
+        ollama_model (str): Model name to use.
 
     Returns:
-        The raw model response (typically a string representation of a Python list).
+        list[str]: Standardized genre labels.
     """
     
     prompt = f"""
@@ -68,24 +69,16 @@ def extract_genres_ollama(genre, client, ollama_model = "mistral"):
 
 def clean_books(input_path: str, output_path: str, sleep_seconds=20, max_retries=3):
     """
-    End-to-end cleaning and genre standardization for a books dataset.
-
-    Steps:
-        1. Load a CSV file containing at least 'description' and 'genre_category'.
-        2. Clean the 'description' field (strip HTML, normalize whitespace).
-        3. Filter out rows with very short descriptions.
-        4. Standardize 'genre_category' using an Ollama model (Mistral).
-        5. Periodically persist progress to disk.
-        6. Save the final cleaned dataset to the output CSV path.
+    Cleans a books dataset and standardizes genres using an Ollama model.
 
     Args:
-        input_path: Path to the input CSV file.
-        output_path: Path to the output CSV file (cleaned dataset).
-        sleep_seconds: Delay between calls to the LLM for rate-limiting.
-        max_retries: Maximum number of retries per genre if an error occurs.
+        input_path (str): Path to the input CSV file.
+        output_path (str): Path to write the cleaned CSV file.
+        sleep_seconds (int): Delay between LLM calls for rate limiting.
+        max_retries (int): Maximum retry attempts per genre.
 
     Returns:
-        None. Writes the cleaned dataset to `output_path`.
+        None
     """
     
     print("Loading dataset...")

@@ -22,9 +22,8 @@ from sentence_transformers import SentenceTransformer
 from configs.config import Config
 
 
-# ------------------------------------------------------------------
+
 # Configuration & shared resources
-# ------------------------------------------------------------------
 
 @lru_cache(maxsize=1)
 def get_config() -> Config:
@@ -43,9 +42,7 @@ def get_embedding_model() -> SentenceTransformer:
     return SentenceTransformer(cfg.embedding_model)
 
 
-# ------------------------------------------------------------------
 # Language mapping (UI-facing convenience)
-# ------------------------------------------------------------------
 
 LANGUAGE_MAP: Dict[str, List[str]] = {
     "English": ["eng", "en-us", "en-gb", "en-ca", "enm"],
@@ -68,11 +65,19 @@ LANGUAGE_MAP: Dict[str, List[str]] = {
 }
 
 
-# ------------------------------------------------------------------
 # Neo4j query helpers
-# ------------------------------------------------------------------
 
 def get_books_by_language(tx: Transaction, language_codes: List[str]) -> List[Any]:
+    """
+    Retrieves book IDs for books written in the specified languages.
+
+    Args:
+        tx (Transaction): Active database transaction.
+        language_codes (List[str]): List of language codes to filter by.
+
+    Returns:
+        List[Any]: Book IDs matching the given language codes.
+    """
     q = """
     MATCH (b:Book)
     WHERE b.language_code IN $codes
@@ -82,6 +87,17 @@ def get_books_by_language(tx: Transaction, language_codes: List[str]) -> List[An
 
 
 def get_book_by_title(tx: Transaction, title: str, allowed_ids: Iterable) -> Optional[Dict[str, Any]]:
+    """
+    Retrieves a book by exact title, restricted to a set of allowed book IDs.
+
+    Args:
+        tx (Transaction): Active database transaction.
+        title (str): Exact book title to match.
+        allowed_ids (Iterable): Collection of permitted book IDs.
+
+    Returns:
+        Optional[Dict[str, Any]]: Book title and description if found, otherwise None.
+    """
     q = """
     MATCH (b:Book {title: $title})
     WHERE b.bookID IN $allowed_ids
@@ -96,6 +112,17 @@ def find_closest_title_fulltext(
     query: str,
     allowed_ids: Iterable,
 ) -> Optional[str]:
+    """
+    Finds the closest matching book title using a full-text index.
+
+    Args:
+        tx (Transaction): Active database transaction.
+        query (str): Search query string.
+        allowed_ids (Iterable): Collection of permitted book IDs.
+
+    Returns:
+        Optional[str]: Best-matching book title, or None if no match is found.
+    """
     q = """
     CALL db.index.fulltext.queryNodes('book_title_fulltext', $q)
     YIELD node, score
@@ -115,6 +142,19 @@ def vector_search(
     k: int,
     search_k: int = 1000,
 ) -> List[str]:
+    """
+    Performs semantic similarity search using a vector index.
+
+    Args:
+        tx (Transaction): Active database transaction.
+        embedding (List[float]): Query embedding vector.
+        allowed_ids (Iterable): Collection of permitted book IDs.
+        k (int): Number of results to return.
+        search_k (int): Number of candidates to search in the index.
+
+    Returns:
+        List[str]: Top matching book titles with similarity scores.
+    """
     q = """
     CALL db.index.vector.queryNodes(
         'book_embedding_index',
@@ -142,6 +182,19 @@ def graph_recommend(
     allowed_ids: Iterable,
     k: int,
 ) -> List[str]:
+    """
+    Generates book recommendations based on shared genres and authors.
+
+    Args:
+        tx (Transaction): Active database transaction.
+        title (str): Reference book title.
+        allowed_ids (Iterable): Collection of permitted book IDs.
+        k (int): Number of recommendations to return.
+
+    Returns:
+        List[str]: Recommended book titles with relevance scores.
+    """
+    
     q = """
     MATCH (b:Book {title: $title})
     WHERE b.bookID IN $allowed_ids
@@ -162,6 +215,15 @@ def graph_recommend(
     return [dict(r) for r in tx.run(q, title=title, allowed_ids=allowed_ids, k=k)]
 
 def normalize(scores):
+    """
+    Normalizes score values to the range [0, 1].
+
+    Args:
+        scores (list[dict]): Items containing a numeric "score" field.
+
+    Returns:
+        list[dict]: Items with normalized score values.
+    """
     if not scores:
         return scores
     max_s = max(s["score"] for s in scores)
@@ -171,9 +233,7 @@ def normalize(scores):
     ]
 
 
-# ------------------------------------------------------------------
 # Public API
-# ------------------------------------------------------------------
 def recommend_books(
     book_query: str,
     language_codes: List[str],

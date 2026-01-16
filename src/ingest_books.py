@@ -1,18 +1,30 @@
 from neo4j import GraphDatabase
 import pandas as pd
-import ast
+from configs.config import Config
 
 # Load the dataset
 df = pd.read_csv("data/books_clean.csv")
 
-# Neo4j connection (NO AUTHENTICATION)
-driver = GraphDatabase.driver(
-    "bolt://localhost:7687",
-    auth=None
-)
+cfg = Config()
+
+# Neo4j connection
+driver = GraphDatabase.driver(cfg.neo4j_uri, auth=cfg.neo4j_auth)
 
 def ingest_row(tx, row):
-    # --- Create Book node ---
+    """
+    Ingests a single book record into the graph database.
+
+    Creates or updates the Book node and establishes relationships to
+    authors, publisher, genres, and category.
+
+    Args:
+        tx: Active database transaction.
+        row (dict): Book record containing metadata and relationships.
+
+    Returns:
+        None
+    """
+    # Create Book node
     tx.run("""
         MERGE (b:Book {bookID: $bookID})
         SET b.title = $title,
@@ -23,7 +35,7 @@ def ingest_row(tx, row):
             b.rating_count = $ratings_count
     """, row)
 
-    # --- Authors ---
+    # Authors
     authors = row["authors"].split("/")
     for a in authors:
         tx.run("MERGE (auth:Author {name: $a})", a=a)
@@ -33,7 +45,7 @@ def ingest_row(tx, row):
             MERGE (b)-[:WRITTEN_BY]->(auth)
         """, bookID=row["bookID"], a=a)
 
-    # --- Publisher ---
+    # Publisher
     tx.run("MERGE (pub:Publisher {name: $p})", p=row["publisher"])
     tx.run("""
         MATCH (b:Book {bookID: $bookID})
@@ -41,7 +53,7 @@ def ingest_row(tx, row):
         MERGE (b)-[:PUBLISHED_BY]->(pub)
     """, bookID=row["bookID"], p=row["publisher"])
 
-    # --- Genres ---
+    # Genres
     genres = row["standardized_genres"].split(",")
     for g in genres:
         g = g.strip()
@@ -52,7 +64,7 @@ def ingest_row(tx, row):
             MERGE (b)-[:HAS_GENRE]->(genre)
         """, bookID=row["bookID"], g=g)
 
-    # --- Category ---
+    # Category
     tx.run("MERGE (c:Category {name: $category})", category=row["category"])
     tx.run("""
         MATCH (b:Book {bookID: $bookID})
@@ -60,7 +72,7 @@ def ingest_row(tx, row):
         MERGE (b)-[:HAS_CATEGORY]->(c)
     """, bookID=row["bookID"], category=row["category"])
 
-# --- Execute ingestion ---
+# Execute ingestion
 with driver.session() as session:
     for _, row in df.iterrows():
         session.execute_write(ingest_row, row.to_dict())

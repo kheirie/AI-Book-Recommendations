@@ -15,13 +15,18 @@ def get_embedding_model() -> SentenceTransformer:
 def get_embedding_dimension() -> int:
     return get_embedding_model().get_sentence_embedding_dimension()
 
-# -----------------------------
 # Neo4j I/O
-# -----------------------------
 def fetch_books_batch(tx: Transaction, skip: int, limit: int) -> List[Dict[str, Any]]:
     """
-    Fetch a deterministic batch of books.
-    We fetch title/description regardless; we decide what to embed in Python.
+    Fetches a deterministic batch of books for downstream processing.
+
+    Args:
+        tx (Transaction): Active database transaction.
+        skip (int): Number of records to skip.
+        limit (int): Maximum number of records to return.
+
+    Returns:
+        List[Dict[str, Any]]: Book IDs, titles, and descriptions.
     """
     q = """
     MATCH (b:Book)
@@ -37,14 +42,14 @@ def fetch_books_batch(tx: Transaction, skip: int, limit: int) -> List[Dict[str, 
 
 def write_embeddings_batch(tx: Transaction, rows: List[Dict[str, Any]]) -> None:
     """
-    rows: list of dicts:
-      {
-        "id": ...,
-        "embedding": [...]/None,
-        "title_embedding": [...]/None,
-        "embedding_model": str,
-        "embedding_dim": int
-      }
+    Writes embedding data to Book nodes in batch.
+
+    Args:
+        tx (Transaction): Active database transaction.
+        rows (List[Dict[str, Any]]): Embedding records keyed by book ID.
+
+    Returns:
+        None
     """
     q = """
     UNWIND $rows AS row
@@ -63,9 +68,7 @@ def write_embeddings_batch(tx: Transaction, rows: List[Dict[str, Any]]) -> None:
     tx.run(q, rows=rows)
 
 
-# -----------------------------
 # Main
-# -----------------------------
 def main() -> None:
     cfg = Config()
 
@@ -82,7 +85,7 @@ def main() -> None:
             "are both false. Nothing to do."
         )
 
-    print("📚 Starting embedding job")
+    print("Starting embedding job")
     print(f" - Neo4j URI: {cfg.neo4j_uri}")
     print(f" - Model: {cfg.embedding_model} (dim={dim})")
     print(f" - normalize: {cfg.embedding_normalize}")
@@ -138,11 +141,11 @@ def main() -> None:
                 session.execute_write(write_embeddings_batch, rows)
 
                 total += len(rows)
-                print(f"✅ Stored embeddings for {total} books...")
+                print(f"Stored embeddings for {total} books...")
 
                 skip += page_size
 
-        print("🎉 Embeddings successfully added to Neo4j!")
+        print("Embeddings successfully added to Neo4j!")
 
     finally:
         driver.close()
